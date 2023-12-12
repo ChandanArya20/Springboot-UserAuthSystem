@@ -12,7 +12,7 @@ public class CorsConfig {
 	private String frontendAppURL;
 	
 	@Bean
-	public WebMvcConfigurer congifWebMvc(){
+	public WebMvcConfigurer webMvcConfigurer(){
 		
 		return new WebMvcConfigurer() {
 			

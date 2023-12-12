@@ -3,6 +3,8 @@ package in.ineuron.services;
 import in.ineuron.dto.UserResponse;
 import in.ineuron.models.User;
 
+import javax.servlet.http.HttpServletResponse;
+
 public interface UserService {
 
     public Boolean isUserAvailableByPhone(String phone);

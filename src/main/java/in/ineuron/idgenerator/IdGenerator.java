@@ -8,6 +8,8 @@ import java.io.Serializable;
 import java.time.LocalDate;
 
 public class IdGenerator implements IdentifierGenerator {
+
+    //generate custome id for models/entity
     @Override
     public Serializable generate(SharedSessionContractImplementor sharedSessionContractImplementor, Object o) throws HibernateException {
         String prefix="HB-";
