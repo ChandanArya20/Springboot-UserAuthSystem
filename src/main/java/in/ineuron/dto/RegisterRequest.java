@@ -15,23 +15,23 @@ import lombok.ToString;
 @NoArgsConstructor
 public class RegisterRequest {
 
-	@NotBlank(message = "Name should not be empty")
+	@NotBlank(message = "Name should not be empty or null")
 	@Size(min=3, message = "Name should be greater than 2")
 	String name;
 
-	@NotBlank(message = "Phone No. should not be empty")
-	@Pattern(regexp = "^[6-9][0-9]*$",
-						message="invalid phone!")
+//	@NotBlank(message = "Phone No. should not be empty or null")
+//	@Pattern(regexp = "^[6-9][0-9]*$",
+//						message="invalid phone!")
 	String phone;
 
-	@NotBlank(message = "Email should not be empty")
+	@NotBlank(message = "Email should not be empty or null")
 	@Email(regexp = "^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$",
 	message="invalid email!")
 	String email;
 	
-	@NotBlank(message = "Password should not be empty")
+	@NotBlank(message = "Password should not be empty or null")
     @Pattern(regexp = "^(?!.*\\s).*$",
-             message = "Space is not allowed between")
+             message = "Space is not allowed")
 	String password;
 
 

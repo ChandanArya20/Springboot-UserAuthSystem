@@ -9,11 +9,12 @@ public interface UserService {
 
     public Boolean isUserAvailableByPhone(String phone);
     public Boolean isUserAvailableByEmail(String email);
-    public Boolean isUserAvailableByUserName(String userName);
     public void registerUser(User user);
     public User fetchUserByPhone(String phone);
     public User fetchUserByEmail(String email);
-    public User fetchUserByUserName(String userName);
+
+    boolean updateUserPassword(String userId, String newPassword);
+
     public UserResponse fetchUserDetails(String userId);
 
 }

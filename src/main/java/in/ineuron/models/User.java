@@ -16,17 +16,15 @@ public class User {
 	
 	@Column(nullable = false)
 	String name;
-	
+
 	@Column(unique = true, nullable = false)
-	String phone;
-	
-	@Column(unique = true)
 	String email;
-	
+
+	@Column(unique = true)
+	String phone;
+
 	@Column(nullable = false)
 	String password;
-	
-
 
 }
 

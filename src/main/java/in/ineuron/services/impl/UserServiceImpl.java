@@ -4,23 +4,21 @@ import in.ineuron.dto.UserResponse;
 import in.ineuron.models.User;
 import in.ineuron.repositories.UserRepository;
 import in.ineuron.services.UserService;
-import in.ineuron.utils.EmailValidator;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.Cookie;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
 
     private UserRepository userRepo;
+
+    public UserServiceImpl(UserRepository userRepo) {
+        this.userRepo = userRepo;
+    }
 
     @Override
     public Boolean isUserAvailableByPhone(String phone) {
@@ -32,28 +30,6 @@ public class UserServiceImpl implements UserService {
     public Boolean isUserAvailableByEmail(String email) {
 
         return userRepo.existsByEmail(email);
-    }
-
-    public UserServiceImpl(UserRepository userRepo) {
-        this.userRepo = userRepo;
-    }
-
-    @Override
-    public Boolean isUserAvailableByUserName(String userName) {
-
-        boolean isEmail = EmailValidator.isEmail(userName);
-
-        if(isEmail){
-            return userRepo.existsByEmail(userName);
-        }else {
-            return userRepo.existsByPhone(userName);
-        }
-    }
-
-    @Override
-    public void registerUser(User user) {
-
-        userRepo.save(user);
     }
 
     @Override
@@ -69,14 +45,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User fetchUserByUserName(String userName) {
-        boolean isEmail = EmailValidator.isEmail(userName);
+    public void registerUser(User user) {
 
-        if(isEmail){
-            return userRepo.findByEmail(userName);
-        }else {
-            return userRepo.findByPhone(userName);
+        User regUser = userRepo.save(user);
+        System.out.println(regUser);
+    }
+
+    @Override
+    public boolean updateUserPassword(String userId, String newPassword) {
+
+        Optional<User> userOptional = userRepo.findById(userId);
+
+        if(userOptional.isPresent()){
+            User user = userOptional.get();
+            user.setPassword(newPassword);
+            userRepo.save(user);
+            return true;
         }
+        return false;
     }
 
     @Override
