@@ -16,13 +16,13 @@ public class LoginRequest {
 	@NotEmpty(message = "Email should not be empty")
 	@Email(regexp = "^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)*$",
 	message="invalid email!")
-	String email;
+	private String email;
 
 
 	@NotBlank(message = "Password should not be empty or null")
     @Pattern(regexp = "^(?!.*\\s).*$",
              message = "Invalid password")
-	String password;
+	private String password;
 
 
 	public void setEmail(String email) {

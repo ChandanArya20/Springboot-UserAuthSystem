@@ -45,7 +45,7 @@ public class OTPStorageServiceImpl implements OTPStorageService {
     }
 
     private void cleanUpExpiredOTP() {
-        System.out.println("cleanUpExpiredOTP() runs");
+//        System.out.println("cleanUpExpiredOTP() runs");
         long currentTime = System.currentTimeMillis();
         // Iterate through the OTP map and remove entries older than 10 minutes.
         otpMap.entrySet().removeIf(entry -> (currentTime - entry.getValue().getCreationTime() > 600_000));

@@ -5,12 +5,12 @@ import lombok.Data;
 @Data
 public class UserResponse {
 	
-	String id;
+	private String id;
 
-	String name;
+	private String name;
 	
-	String phone;
+	private String phone;
 	
-	String email;
+	private String email;
 	
 }

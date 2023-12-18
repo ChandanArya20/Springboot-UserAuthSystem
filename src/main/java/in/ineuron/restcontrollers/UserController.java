@@ -12,17 +12,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.BindingResult;
-import org.springframework.validation.FieldError;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.bind.annotation.*;
 
 import javax.mail.MessagingException;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/user")
@@ -104,7 +101,10 @@ public class UserController {
 
 			Cookie cookie = new Cookie("auth-token", token);
 			cookie.setHttpOnly(true);
-			cookie.setSecure(true);
+//			int maxAge=7*24*60*60;  // 7 days in seconds
+			int maxAge=60;  // 7 days in seconds
+			cookie.setMaxAge(maxAge);
+//			cookie.setSecure(true);
 			response.addCookie(cookie);
 
 			return ResponseEntity.ok(userResponse);
@@ -160,5 +160,27 @@ public class UserController {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User name not found...");
 		}
 	}
+
+	// Method to handle a different endpoint
+	@GetMapping("/test-cookie")
+	public ResponseEntity<String> someOtherEndpoint(HttpServletRequest request) {
+
+		Cookie[] cookies = request.getCookies();
+		String authToken=null;
+		if(cookies!=null){
+			for(Cookie cookie:cookies) {
+				if (cookie.getName().equals("auth-token")) {
+					authToken = cookie.getValue();
+					System.out.println(cookie.getName() + " : " + cookie.getValue() + " "+ cookie.getMaxAge());
+				}
+			}
+		}
+
+		if(authToken!=null){
+        	return ResponseEntity.ok(authToken);
+		}else {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token is expired");
+		}
+    }
 
 }

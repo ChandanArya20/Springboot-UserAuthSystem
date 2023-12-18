@@ -12,19 +12,19 @@ public class User {
 	@Id
 	@GenericGenerator(name = "gen",strategy = "in.ineuron.idgenerator.IdGenerator")
 	@GeneratedValue(generator = "gen")
-	String id;
+	private String id;
 	
 	@Column(nullable = false)
-	String name;
+	private String name;
 
 	@Column(unique = true, nullable = false)
-	String email;
+	private String email;
 
 	@Column(unique = true)
-	String phone;
+	private String phone;
 
 	@Column(nullable = false)
-	String password;
+	private String password;
 
 }
 
