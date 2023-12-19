@@ -1,17 +1,29 @@
 package in.ineuron.utils;
 
-import org.springframework.http.ResponseEntity;
+import in.ineuron.services.TokenStorageService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
 @Component
 public class UserUtils {
 
+    @Autowired
+    private TokenStorageService tokenService;
+
+    /**
+     * Validate user credentials and extract error messages and field names.
+     *
+     * @param result BindingResult object containing validation errors
+     * @return Map containing field names as keys and error messages as values
+     */
     public Map<String, String> validateUserCredential(BindingResult result){
 
         Map<String, String> errorsMap = new HashMap<>();
@@ -26,10 +38,50 @@ public class UserUtils {
                     errorsMap.put("global", error.getDefaultMessage());
                 }
             }
-
         }
         // Return only error messages and field names
         return errorsMap;
     }
 
+    /**
+     * Get authentication token from the request's cookies.
+     *
+     * @param request HttpServletRequest object
+     * @return Authentication token or null if not found
+     */
+    public String getAuthToken(HttpServletRequest request) {
+
+        Cookie[] cookies = request.getCookies();
+        String authToken = null;
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("auth-token".equals(cookie.getName()) && !cookie.getValue().isBlank()) {
+                    authToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
+
+        return authToken;
+    }
+
+    /**
+     * Validate the authenticity of the provided authentication token.
+     *
+     * @param request HttpServletRequest object
+     * @return True if the token is valid, otherwise false
+     */
+    public boolean validateToken(HttpServletRequest request) {
+
+        String authToken = getAuthToken(request);
+
+        System.out.println(authToken);
+
+        if(authToken != null){
+            return tokenService.isValidToken(authToken);
+        } else {
+            return false;
+        }
+    }
 }

@@ -4,6 +4,7 @@ import in.ineuron.dto.*;
 import in.ineuron.models.User;
 import in.ineuron.services.OTPSenderService;
 import in.ineuron.services.OTPStorageService;
+import in.ineuron.services.TokenStorageService;
 import in.ineuron.services.UserService;
 import in.ineuron.utils.UserUtils;
 import org.springframework.beans.BeanUtils;
@@ -19,6 +20,7 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
+import java.net.NoRouteToHostException;
 import java.util.*;
 
 @RestController
@@ -35,6 +37,9 @@ public class UserController {
 
 	@Autowired
 	private OTPStorageService otpStorage;
+
+	@Autowired
+	private TokenStorageService tokenService;
 
 	@Autowired
 	private UserUtils userUtils;
@@ -97,25 +102,61 @@ public class UserController {
 			UserResponse userResponse = new UserResponse();
 			BeanUtils.copyProperties(user, userResponse);
 
-			String token = UUID.randomUUID().toString();
+			String token = tokenService.generateToken();
 
 			Cookie cookie = new Cookie("auth-token", token);
 			cookie.setHttpOnly(true);
-//			int maxAge=7*24*60*60;  // 7 days in seconds
-			int maxAge=60;  // 7 days in seconds
+			int maxAge=7*24*60*60;  // 7 days in seconds
 			cookie.setMaxAge(maxAge);
-//			cookie.setSecure(true);
+//			cookie.setSecure(true);  //only for https
 			response.addCookie(cookie);
 
 			return ResponseEntity.ok(userResponse);
 		}
 	}
 
+	@GetMapping("/logout")
+	public ResponseEntity<?> loginUser(HttpServletRequest request, HttpServletResponse response) {
+
+		String authToken = userUtils.getAuthToken(request);
+		if(authToken!=null){
+
+			tokenService.removeToken(authToken);
+
+			Cookie cookie = new Cookie("auth-token", null);
+			cookie.setHttpOnly(true);
+			response.addCookie(cookie);
+
+			return ResponseEntity.ok("User logged out successfully");
+		} else {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token not found");
+		}
+	}
+
+	@GetMapping("/check-login")
+	public ResponseEntity<String> checkUserLogin(HttpServletRequest request, HttpServletResponse response) {
+
+		String authToken = userUtils.getAuthToken(request);
+
+		// Check if the authToken is empty or null
+		if (authToken == null) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token not found with response");
+		}
+
+		if (userUtils.validateToken(request)) {
+			return ResponseEntity.ok("User is logged in");
+		} else {
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("User login session has expired");
+		}
+	}
+
+
 	@GetMapping("/send-otp")
 	public ResponseEntity<String> sendOTPByPhone(@RequestParam("email") String email ) throws MessagingException {
 
 		if(userService.isUserAvailableByEmail(email)){
-			Integer OTP=-1;
+			Integer OTP = null;
+
 			OTP = otpSender.sendOTPByEmail(email);
 
 			otpStorage.storeOTP(email, String.valueOf(OTP));
@@ -124,7 +165,7 @@ public class UserController {
 		}else {
 			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Account not found for "+email);
 		}
-	}
+    }
 
 	@GetMapping("/verify-otp")
 	public ResponseEntity<String> verifyOTPByPhone(
@@ -151,7 +192,7 @@ public class UserController {
 
 		User user= userService.fetchUserByEmail(userCredential.getEmail());
 
-		if(user!=null){
+		if(user==null){
 			userService.updateUserPassword(user.getId(), passwordEncoder.encode(userCredential.getNewPassword()));
 
 			return ResponseEntity.ok("Password updated successfully..");
@@ -165,19 +206,14 @@ public class UserController {
 	@GetMapping("/test-cookie")
 	public ResponseEntity<String> someOtherEndpoint(HttpServletRequest request) {
 
-		Cookie[] cookies = request.getCookies();
-		String authToken=null;
-		if(cookies!=null){
-			for(Cookie cookie:cookies) {
-				if (cookie.getName().equals("auth-token")) {
-					authToken = cookie.getValue();
-					System.out.println(cookie.getName() + " : " + cookie.getValue() + " "+ cookie.getMaxAge());
-				}
-			}
+		String authToken = userUtils.getAuthToken(request);
+
+		if (authToken == null ) {
+			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token not found with response");
 		}
 
-		if(authToken!=null){
-        	return ResponseEntity.ok(authToken);
+		if(userUtils.validateToken(request)){
+			return ResponseEntity.ok("Valid token");
 		}else {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token is expired");
 		}

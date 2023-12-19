@@ -4,6 +4,7 @@ import in.ineuron.dto.OTPEntry;
 import in.ineuron.services.OTPStorageService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -12,43 +13,52 @@ import java.util.concurrent.TimeUnit;
 
 @Service
 public class OTPStorageServiceImpl implements OTPStorageService {
+    private static final long CLEANUP_INTERVAL_MINUTES = 1;
+    private static final long OTP_EXPIRY_DURATION_MILLIS = 600_000; // 10 minutes
+
     private final Map<String, OTPEntry> otpMap = new ConcurrentHashMap<>();
     private final ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
 
-
     public OTPStorageServiceImpl() {
-        // Schedule a cleanup task to remove expired OTPs every 10 minutes.
-        executorService.scheduleAtFixedRate(this::cleanUpExpiredOTP, 1, 1, TimeUnit.MINUTES);
+        // Schedule a cleanup task to remove expired OTPs every 1 minute.
+        executorService.scheduleAtFixedRate(this::cleanUpExpiredOTP, CLEANUP_INTERVAL_MINUTES, CLEANUP_INTERVAL_MINUTES, TimeUnit.MINUTES);
     }
 
     public void storeOTP(String userName, String otp) {
-
         OTPEntry otpEntry = new OTPEntry(otp, System.currentTimeMillis());
         otpMap.put(userName, otpEntry);
+        // Log statement: System.out.println("OTP stored for user: " + userName);
     }
 
     public String getStoredOTP(String userName) {
         OTPEntry otpEntry = otpMap.get(userName);
-        return otpEntry!=null ? otpEntry.getOtp() : "-1";  // Return -1 if OTP is not found.
+        return (otpEntry != null) ? otpEntry.getOtp() : null;
     }
 
     @Override
     public boolean verifyOTP(String userName, String otp) {
-
         String storedOTP = getStoredOTP(userName);
-        return storedOTP.equals(otp);
+        return otp.equals(storedOTP);
+
     }
 
     @Override
     public void removeOTP(String userName) {
         otpMap.remove(userName);
+        // Log statement: System.out.println("OTP removed for user: " + userName);
     }
 
     private void cleanUpExpiredOTP() {
-//        System.out.println("cleanUpExpiredOTP() runs");
         long currentTime = System.currentTimeMillis();
-        // Iterate through the OTP map and remove entries older than 10 minutes.
-        otpMap.entrySet().removeIf(entry -> (currentTime - entry.getValue().getCreationTime() > 600_000));
+        // Iterate through the OTP map and remove entries older than the expiration duration.
+        otpMap.entrySet().removeIf(entry -> (currentTime - entry.getValue().getCreationTime() > OTP_EXPIRY_DURATION_MILLIS));
+        // Log statement: System.out.println("Expired OTPs cleaned up");
     }
 
+    // Shutdown the executor service when the application stops
+    // (Note: This may be done in a @PreDestroy method or elsewhere in the application lifecycle)
+    @PreDestroy
+    public void shutdownExecutorService() {
+        executorService.shutdown();
+    }
 }
