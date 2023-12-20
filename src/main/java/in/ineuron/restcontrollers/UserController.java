@@ -192,7 +192,7 @@ public class UserController {
 
 		User user= userService.fetchUserByEmail(userCredential.getEmail());
 
-		if(user==null){
+		if(user!=null){
 			userService.updateUserPassword(user.getId(), passwordEncoder.encode(userCredential.getNewPassword()));
 
 			return ResponseEntity.ok("Password updated successfully..");
