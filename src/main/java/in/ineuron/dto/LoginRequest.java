@@ -1,10 +1,8 @@
 package in.ineuron.dto;
 
-import javax.validation.constraints.*;
-
+import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.ToString;
 
 @Getter

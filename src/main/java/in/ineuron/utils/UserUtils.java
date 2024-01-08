@@ -1,14 +1,14 @@
 package in.ineuron.utils;
 
 import in.ineuron.services.TokenStorageService;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,7 +62,22 @@ public class UserUtils {
                 }
             }
         }
+        return authToken;
+    }
 
+    public String getOTPAuthToken(HttpServletRequest request) {
+
+        Cookie[] cookies = request.getCookies();
+        String authToken = null;
+
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("otpVerified-token".equals(cookie.getName()) && !cookie.getValue().isBlank()) {
+                    authToken = cookie.getValue();
+                    break;
+                }
+            }
+        }
         return authToken;
     }
 
@@ -75,6 +90,19 @@ public class UserUtils {
     public boolean validateToken(HttpServletRequest request) {
 
         String authToken = getAuthToken(request);
+
+        System.out.println(authToken);
+
+        if(authToken != null){
+            return tokenService.isValidToken(authToken);
+        } else {
+            return false;
+        }
+    }
+
+    public boolean validateOTPAuthToken(HttpServletRequest request) {
+
+        String authToken = getOTPAuthToken(request);
 
         System.out.println(authToken);
 

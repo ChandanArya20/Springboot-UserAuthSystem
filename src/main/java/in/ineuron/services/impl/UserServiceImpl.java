@@ -52,7 +52,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public boolean updateUserPassword(String userId, String newPassword) {
+    public boolean updateUserPassword(Long userId, String newPassword) {
 
         Optional<User> userOptional = userRepo.findById(userId);
 
@@ -66,7 +66,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse fetchUserDetails(String userId) {
+    public UserResponse fetchUserDetails(Long userId) {
 
         Optional<User> userOptional = userRepo.findById(userId);
         if(userOptional.isPresent()) {

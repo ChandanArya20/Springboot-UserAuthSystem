@@ -1,12 +1,20 @@
 package in.ineuron.restcontrollers;
 
-import in.ineuron.dto.*;
+import in.ineuron.dto.LoginRequest;
+import in.ineuron.dto.RegisterRequest;
+import in.ineuron.dto.UpdateUserPasswordDTO;
+import in.ineuron.dto.UserResponse;
 import in.ineuron.models.User;
 import in.ineuron.services.OTPSenderService;
 import in.ineuron.services.OTPStorageService;
 import in.ineuron.services.TokenStorageService;
 import in.ineuron.services.UserService;
 import in.ineuron.utils.UserUtils;
+import jakarta.mail.MessagingException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,13 +23,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
-import javax.mail.MessagingException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.Valid;
-import java.net.NoRouteToHostException;
-import java.util.*;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
@@ -102,7 +104,7 @@ public class UserController {
 			UserResponse userResponse = new UserResponse();
 			BeanUtils.copyProperties(user, userResponse);
 
-			String token = tokenService.generateToken();
+			String token = tokenService.generateToken(user.getId());
 
 			Cookie cookie = new Cookie("auth-token", token);
 			cookie.setHttpOnly(true);
@@ -119,8 +121,8 @@ public class UserController {
 	public ResponseEntity<?> loginUser(HttpServletRequest request, HttpServletResponse response) {
 
 		String authToken = userUtils.getAuthToken(request);
-		if(authToken!=null){
 
+		if(authToken!=null){
 			tokenService.removeToken(authToken);
 
 			Cookie cookie = new Cookie("auth-token", null);
@@ -135,13 +137,6 @@ public class UserController {
 
 	@GetMapping("/check-login")
 	public ResponseEntity<String> checkUserLogin(HttpServletRequest request, HttpServletResponse response) {
-
-		String authToken = userUtils.getAuthToken(request);
-
-		// Check if the authToken is empty or null
-		if (authToken == null) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token not found with response");
-		}
 
 		if (userUtils.validateToken(request)) {
 			return ResponseEntity.ok("User is logged in");
@@ -170,12 +165,22 @@ public class UserController {
 	@GetMapping("/verify-otp")
 	public ResponseEntity<String> verifyOTPByPhone(
 			@RequestParam("email") String email,
-			@RequestParam String otp ) throws MessagingException {
+			@RequestParam String otp, HttpServletResponse response ) throws MessagingException {
 
 			if(userService.isUserAvailableByEmail(email)){
 
 				if(otpStorage.verifyOTP(email, otp)){
 					otpStorage.removeOTP(email);
+
+					//setting token for authorized user who wants to change password
+					String token = tokenService.generateToken(null);
+					Cookie cookie = new Cookie("otpVerified-token", token);
+					cookie.setHttpOnly(true);
+					int maxAge=5*60;  // 5 minutes in seconds
+					cookie.setMaxAge(maxAge);
+
+					response.addCookie(cookie);
+
 					return ResponseEntity.ok("verified successfully.. ");
 				} else {
 					return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("OTP verification failed.. ");
@@ -188,17 +193,23 @@ public class UserController {
 
 	@PostMapping("/otp-verified/update-password")
 	public ResponseEntity<?> UpdateUserPasswordAfterOTPVerified(
-			@RequestBody UpdateUserPasswordDTO userCredential ) {
+			@RequestBody UpdateUserPasswordDTO userCredential, HttpServletRequest request ) {
 
-		User user= userService.fetchUserByEmail(userCredential.getEmail());
+		System.out.println(userUtils.getOTPAuthToken(request));
 
-		if(user!=null){
-			userService.updateUserPassword(user.getId(), passwordEncoder.encode(userCredential.getNewPassword()));
-
-			return ResponseEntity.ok("Password updated successfully..");
-
+		if(!userUtils.validateOTPAuthToken(request)){
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session is expired or token not found with request");
 		} else {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User name not found...");
+
+			User user= userService.fetchUserByEmail(userCredential.getEmail());
+
+			if(user!=null){
+				userService.updateUserPassword(user.getId(), passwordEncoder.encode(userCredential.getNewPassword()));
+				return ResponseEntity.ok("Password updated successfully..");
+
+			} else {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User name not found...");
+			}
 		}
 	}
 
@@ -206,16 +217,10 @@ public class UserController {
 	@GetMapping("/test-cookie")
 	public ResponseEntity<String> someOtherEndpoint(HttpServletRequest request) {
 
-		String authToken = userUtils.getAuthToken(request);
-
-		if (authToken == null ) {
-			return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Token not found with response");
-		}
-
 		if(userUtils.validateToken(request)){
 			return ResponseEntity.ok("Valid token");
 		}else {
-			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token is expired");
+			return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token is expired or not available in request");
 		}
     }
 

@@ -2,10 +2,10 @@ package in.ineuron.services.impl;
 
 import in.ineuron.services.EmailSenderService;
 import in.ineuron.services.OTPSenderService;
+import jakarta.mail.MessagingException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import javax.mail.MessagingException;
 import java.util.Random;
 
 @Service

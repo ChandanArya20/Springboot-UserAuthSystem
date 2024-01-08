@@ -1,6 +1,7 @@
 package in.ineuron.services;
 
-import javax.mail.MessagingException;
+
+import jakarta.mail.MessagingException;
 
 public interface OTPSenderService {
     Integer sendOTPByEmail(String email ) throws MessagingException;

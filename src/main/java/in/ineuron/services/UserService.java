@@ -3,8 +3,6 @@ package in.ineuron.services;
 import in.ineuron.dto.UserResponse;
 import in.ineuron.models.User;
 
-import javax.servlet.http.HttpServletResponse;
-
 public interface UserService {
 
     public Boolean isUserAvailableByPhone(String phone);
@@ -13,8 +11,8 @@ public interface UserService {
     public User fetchUserByPhone(String phone);
     public User fetchUserByEmail(String email);
 
-    boolean updateUserPassword(String userId, String newPassword);
+    boolean updateUserPassword(Long userId, String newPassword);
 
-    public UserResponse fetchUserDetails(String userId);
+    public UserResponse fetchUserDetails(Long userId);
 
 }

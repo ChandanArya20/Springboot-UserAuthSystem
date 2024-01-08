@@ -1,10 +1,10 @@
 package in.ineuron.services.impl;
 
-import in.ineuron.dto.OTPEntry;
 import in.ineuron.services.OTPStorageService;
+import jakarta.annotation.PreDestroy;
+import lombok.Getter;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PreDestroy;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
@@ -60,5 +60,18 @@ public class OTPStorageServiceImpl implements OTPStorageService {
     @PreDestroy
     public void shutdownExecutorService() {
         executorService.shutdown();
+    }
+
+    // Nested class representing an OTP entry
+    @Getter
+    private static class OTPEntry {
+        private final String otp;
+        private final long creationTime;
+
+        public OTPEntry(String otp, long creationTime) {
+            this.otp = otp;
+            this.creationTime = creationTime;
+        }
+
     }
 }
